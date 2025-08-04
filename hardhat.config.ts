@@ -1,8 +1,14 @@
-import { HardhatUserConfig } from "hardhat/config";
-import "@nomicfoundation/hardhat-toolbox";
+require("@nomicfoundation/hardhat-toolbox");
 
-const config: HardhatUserConfig = {
-  solidity: "0.8.28",
+/** @type import('hardhat/config').HardhatUserConfig */
+module.exports = {
+  solidity: "0.8.30",
+  networks: {
+    hardhat: {
+      chainId: 31337,
+    },
+  },
+  paths: {
+    artifacts: "./client/src/artifacts",
+  },
 };
-
-export default config;
