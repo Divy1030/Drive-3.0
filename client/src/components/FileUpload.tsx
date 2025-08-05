@@ -1,6 +1,13 @@
 'use client';
 
 import React, { useRef, useState } from "react";
+import { BrowserProvider, Contract } from "ethers";
+
+interface FileUploadProps {
+  account: string | null;
+  provider: BrowserProvider | null;
+  contract: Contract | null;
+}
 
 // Placeholder for allowed users
 const allowedUsers = [
@@ -8,13 +15,13 @@ const allowedUsers = [
   "0x5678...efgh",
 ];
 
-export default function FileUpload() {
+const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'users'>('upload');
   const [walletAddress, setWalletAddress] = useState('');
 
   const handleAddUser = () => {
-    // Add user logic here
+    // Add user logic here, can use contract and provider if needed
     if (walletAddress.trim()) {
       setWalletAddress('');
     }
@@ -207,4 +214,6 @@ export default function FileUpload() {
       </div>
     </div>
   );
-}
+};
+
+export default FileUpload;
