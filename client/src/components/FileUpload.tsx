@@ -2,6 +2,11 @@
 
 import React, { useRef, useState } from "react";
 import { BrowserProvider, Contract } from "ethers";
+import axios from "axios";
+
+// Use Pinata keys directly as strings
+const PINATA_API_KEY = "1cc132124d8edbd945e9";
+const PINATA_SECRET_KEY = "c1eca272e3ca41fec404b8b2c3154575650cf9482f698106f8f9e0c0f93cdc45";
 
 interface FileUploadProps {
   account: string | null;
@@ -19,9 +24,55 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'users'>('upload');
   const [walletAddress, setWalletAddress] = useState('');
+  const [file, setFile] = useState<File | null>(null);
+  const [fileName, setFileName] = useState("No image selected");
+  const [uploading, setUploading] = useState(false);
+
+  // Pinata upload handler
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file || !contract || !account) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const resFile = await axios({
+        method: "post",
+        url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
+        data: formData,
+        headers: {
+          pinata_api_key: PINATA_API_KEY,
+          pinata_secret_api_key: PINATA_SECRET_KEY,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+      const ImgHash = `https://gateway.pinata.cloud/ipfs/${resFile.data.IpfsHash}`;
+      // Call your contract method here (adjust as needed)
+      await contract.add(account, ImgHash);
+      alert("Successfully Image Uploaded");
+      setFileName("No image selected");
+      setFile(null);
+    } catch (e) {
+      alert("Unable to upload image to Pinata");
+    }
+    setUploading(false);
+  };
+
+  // File select handler
+  const retrieveFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const data = e.target.files?.[0];
+    if (!data) return;
+    const reader = new window.FileReader();
+    reader.readAsArrayBuffer(data);
+    reader.onloadend = () => {
+      setFile(data);
+    };
+    setFileName(data.name);
+    e.preventDefault();
+  };
 
   const handleAddUser = () => {
-    // Add user logic here, can use contract and provider if needed
     if (walletAddress.trim()) {
       setWalletAddress('');
     }
@@ -73,8 +124,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
         {/* Content Area */}
         <div className="p-8">
           {activeTab === 'upload' ? (
-            // Upload Tab Content
-            <div className="flex flex-col items-center">
+            <form className="flex flex-col items-center" onSubmit={handleSubmit}>
               <div className="flex flex-col items-center gap-3 mb-8">
                 <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-5 rounded-full shadow-lg">
                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
@@ -93,7 +143,9 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                multiple
+                multiple={false}
+                onChange={retrieveFile}
+                disabled={!account}
               />
 
               <div className="w-full max-w-sm space-y-4">
@@ -101,6 +153,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
                   type="button"
                   className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold shadow-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 text-lg flex items-center justify-center gap-3"
                   onClick={() => fileInputRef.current?.click()}
+                  disabled={!account}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -108,15 +161,22 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
                     <line x1="12" y1="18" x2="12" y2="12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                     <line x1="9" y1="15" x2="15" y2="15" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
                   </svg>
-                  Select Files
+                  Select File
                 </button>
-                
+                <span className="block text-center text-zinc-500 dark:text-zinc-400">Image: {fileName}</span>
+                <button
+                  type="submit"
+                  className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold shadow-lg hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 text-lg flex items-center justify-center gap-3 disabled:opacity-60"
+                  disabled={!file || uploading}
+                >
+                  {uploading ? "Uploading..." : "Upload File"}
+                </button>
                 <div className="text-center">
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">Max file size: 100MB per file</p>
                   <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1">Supported formats: All file types</p>
                 </div>
               </div>
-            </div>
+            </form>
           ) : (
             // Users Tab Content
             <div className="space-y-6">

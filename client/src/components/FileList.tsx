@@ -1,9 +1,39 @@
 'use client'
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import axios from "axios";
 
-export default function FileList({ files }: { files: { name: string; size: number; url?: string }[] }) {
+export default function FileList({ account }: { account: string | null }) {
+  const [files, setFiles] = useState<{ name: string; size: number; url?: string; date?: string }[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('name');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+
+  useEffect(() => {
+    if (!account) {
+      setFiles([]); // Don't show files if not connected
+      return;
+    }
+    const fetchFiles = async () => {
+      try {
+        const res = await axios.get("/api/files");
+        const pinItems = res.data?.rows || [];
+        // Filter by account (will always be empty unless you store wallet address in metadata)
+        const filtered = pinItems.filter((item: any) =>
+          item.user_id?.toLowerCase() === account.toLowerCase()
+        );
+        setFiles(
+          filtered.map((item: any) => ({
+            name: item.metadata?.name || item.ipfs_pin_hash || "Unknown",
+            size: item.size || 0,
+            url: `https://gateway.pinata.cloud/ipfs/${item.ipfs_pin_hash}`,
+            date: item.date_pinned,
+          }))
+        );
+      } catch (err) {
+        setFiles([]);
+      }
+    };
+    fetchFiles();
+  }, [account]);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -82,6 +112,8 @@ export default function FileList({ files }: { files: { name: string; size: numbe
         return b.size - a.size;
       case 'name':
         return a.name.localeCompare(b.name);
+      case 'date':
+        return (b.date ? new Date(b.date).getTime() : 0) - (a.date ? new Date(a.date).getTime() : 0);
       default:
         return a.name.localeCompare(b.name);
     }

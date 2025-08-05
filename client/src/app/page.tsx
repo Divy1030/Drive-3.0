@@ -88,7 +88,7 @@ export default function Home() {
         <FileUpload account={account} provider={provider} contract={contract}/>
       </div>
       <div className="w-full max-w-4xl flex flex-col gap-8 items-center mb-4">
-        <FileList files={files} />
+        <FileList account={account} />
       </div>
     </div>
   );
