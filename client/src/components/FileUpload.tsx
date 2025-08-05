@@ -37,6 +37,15 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
       const formData = new FormData();
       formData.append("file", file);
 
+      // Add wallet address to metadata
+      formData.append(
+        "pinataMetadata",
+        JSON.stringify({
+          name: file.name,
+          keyvalues: { account }
+        })
+      );
+
       const resFile = await axios({
         method: "post",
         url: "https://api.pinata.cloud/pinning/pinFileToIPFS",
@@ -48,7 +57,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
         },
       });
       const ImgHash = `https://gateway.pinata.cloud/ipfs/${resFile.data.IpfsHash}`;
-      // Call your contract method here (adjust as needed)
       await contract.add(account, ImgHash);
       alert("Successfully Image Uploaded");
       setFileName("No image selected");

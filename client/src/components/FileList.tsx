@@ -1,39 +1,53 @@
 'use client'
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
 export default function FileList({ account }: { account: string | null }) {
-  const [files, setFiles] = useState<{ name: string; size: number; url?: string; date?: string }[]>([]);
+  const [files, setFiles] = useState<{ name: string; size: number; url?: string; date?: string; hash?: string }[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('name');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
+  const [deleting, setDeleting] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const fetchFiles = useCallback(async () => {
     if (!account) {
-      setFiles([]); // Don't show files if not connected
+      setFiles([]);
       return;
     }
-    const fetchFiles = async () => {
-      try {
-        const res = await axios.get("/api/files");
-        const pinItems = res.data?.rows || [];
-        // Filter by account (will always be empty unless you store wallet address in metadata)
-        const filtered = pinItems.filter((item: any) =>
-          item.user_id?.toLowerCase() === account.toLowerCase()
-        );
-        setFiles(
-          filtered.map((item: any) => ({
-            name: item.metadata?.name || item.ipfs_pin_hash || "Unknown",
-            size: item.size || 0,
-            url: `https://gateway.pinata.cloud/ipfs/${item.ipfs_pin_hash}`,
-            date: item.date_pinned,
-          }))
-        );
-      } catch (err) {
-        setFiles([]);
-      }
-    };
-    fetchFiles();
+    setLoading(true);
+    try {
+      const res = await axios.get(`/api/files?account=${account}`);
+      const pinItems = res.data?.rows || [];
+      setFiles(
+        pinItems.map((item: any) => ({
+          name: item.metadata?.name || item.ipfs_pin_hash || "Unknown",
+          size: item.size || 0,
+          url: `https://gateway.pinata.cloud/ipfs/${item.ipfs_pin_hash}`,
+          date: item.date_pinned,
+          hash: item.ipfs_pin_hash,
+        }))
+      );
+    } catch (err) {
+      setFiles([]);
+    }
+    setLoading(false);
   }, [account]);
+
+  useEffect(() => {
+    fetchFiles();
+  }, [fetchFiles]);
+
+  const handleDelete = async (hash: string) => {
+    if (!window.confirm("Are you sure you want to delete this file?")) return;
+    setDeleting(hash);
+    try {
+      await axios.delete("/api/delete", { data: { hash } });
+      setFiles((prev) => prev.filter((file) => file.hash !== hash));
+    } catch (err) {
+      alert("Failed to delete file.");
+    }
+    setDeleting(null);
+  };
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -139,6 +153,19 @@ export default function FileList({ account }: { account: string | null }) {
             </div>
             
             <div className="flex items-center gap-3">
+              {/* Refresh Button */}
+              <button
+                onClick={fetchFiles}
+                disabled={loading}
+                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                title="Refresh"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                  <path d="M4 4v5h.582M20 20v-5h-.581M5.077 19A9 9 0 1 0 6 6.26" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                {loading ? "Refreshing..." : "Refresh"}
+              </button>
+
               {/* View Mode Toggle */}
               <div className="bg-white/10 rounded-lg p-1 flex">
                 <button
@@ -238,6 +265,24 @@ export default function FileList({ account }: { account: string | null }) {
                           </svg>
                           View
                         </a>
+                      )}
+                      {file.hash && (
+                        <button
+                          onClick={() => handleDelete(file.hash!)}
+                          disabled={deleting === file.hash}
+                          className={`bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                            viewMode === 'grid' ? 'w-full justify-center' : ''
+                          } ${deleting === file.hash ? 'opacity-60 cursor-not-allowed' : ''}`}
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                            <path d="M3 6h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" strokeWidth="2"/>
+                            <path d="M10 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                            <path d="M14 11v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          </svg>
+                          {deleting === file.hash ? "Deleting..." : "Delete"}
+                        </button>
                       )}
                     </div>
                   </div>

@@ -6,7 +6,16 @@ const JWT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySW5mb3JtYXRpb24iOnsiaW
 
 export async function GET(request: NextRequest) {
   try {
-    const response = await axios.get('https://api.pinata.cloud/data/pinList?status=pinned', {
+    const { searchParams } = new URL(request.url);
+    const account = searchParams.get('account');
+
+    // Build Pinata query
+    let url = 'https://api.pinata.cloud/data/pinList?status=pinned';
+    if (account) {
+      url += `&metadata[keyvalues]={"account":{"value":"${account}","op":"eq"}}`;
+    }
+
+    const response = await axios.get(url, {
       headers: {
         Authorization: `Bearer ${JWT}`,
       },
