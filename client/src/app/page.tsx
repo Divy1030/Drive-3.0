@@ -1,32 +1,37 @@
 'use client';
 import Drive from "../artifacts/contracts/Drive.sol/Drive.json";
-import { BrowserProvider, Contract } from "ethers";
+import { BrowserProvider, Contract, Eip1193Provider } from "ethers";
 import { useState } from "react";
 import FileUpload from "../components/FileUpload";
 import FileList from "../components/FileList";
 import DecryptedText from "../animations/Text";
 
 declare global {
+  interface EthereumProvider {
+    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    on: (event: string, handler: (...args: unknown[]) => void) => void;
+    // Add other methods/properties as needed
+  }
   interface Window {
-    ethereum?: any;
+    ethereum?: EthereumProvider;
   }
 }
 
 export default function Home() {
-  const files = [
-    { name: "whitepaper.pdf", size: 234567, url: "#" },
-    { name: "logo.png", size: 45678, url: "#" },
-  ];
+  // const files = [
+  //   { name: "whitepaper.pdf", size: 234567, url: "#" },
+  //   { name: "logo.png", size: 45678, url: "#" },
+  // ];
 
   const [account, setAccount] = useState<string | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
-  const [ownerAddress, setOwnerAddress] = useState<string>("");
+  // const [ownerAddress, setOwnerAddress] = useState<string>("");
 
   // Only connect when button is clicked
   const handleConnect = async () => {
     if (typeof window !== "undefined" && window.ethereum) {
-      const provider = new BrowserProvider(window.ethereum);
+      const provider = new BrowserProvider(window.ethereum as Eip1193Provider);
 
       window.ethereum.on("chainChanged", () => window.location.reload());
       window.ethereum.on("accountsChanged", () => window.location.reload());
@@ -86,7 +91,7 @@ export default function Home() {
         />
       </section>
       <div className="w-full max-w-4xl mb-10 mt-24">
-        <FileUpload account={account} provider={provider} contract={contract}/>
+        <FileUpload account={account}  contract={contract}/>
       </div>
       <div className="w-full max-w-4xl flex flex-col gap-8 items-center mb-4">
         {/* Uploader address input for allowed users */}

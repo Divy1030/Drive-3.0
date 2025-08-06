@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-export default function FileList({ account, contract }: { account: string | null, contract: any }) {
+export default function FileList({ account, contract }: { account: string | null, contract: unknown }) {
   const [ownerAddress, setOwnerAddress] = useState<string>("");
   const [files, setFiles] = useState<{ name: string; size: number; url?: string; date?: string; hash?: string }[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('name');
@@ -19,7 +19,9 @@ export default function FileList({ account, contract }: { account: string | null
     setLoading(true);
     try {
       // If ownerAddress is empty, show own files
+
       const addressToFetch = ownerAddress.trim() === "" ? account : ownerAddress.trim();
+      // @ts-expect-error: contract type is unknown, but we expect display to exist at runtime
       const dataArray = await contract.display(addressToFetch);
       const filesList = (dataArray || [])
         .filter((item: string) => !!item)
@@ -33,7 +35,7 @@ export default function FileList({ account, contract }: { account: string | null
           };
         });
       setFiles(filesList);
-    } catch (err) {
+    } catch {
       setFiles([]);
     }
     setLoading(false);
@@ -49,7 +51,7 @@ export default function FileList({ account, contract }: { account: string | null
     try {
       await axios.delete("/api/delete", { data: { hash } });
       setFiles((prev) => prev.filter((file) => file.hash !== hash));
-    } catch (err) {
+    } catch {
       alert("Failed to delete file.");
     }
     setDeleting(null);

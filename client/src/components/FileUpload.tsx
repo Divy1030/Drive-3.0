@@ -10,11 +10,10 @@ const PINATA_SECRET_KEY = "c1eca272e3ca41fec404b8b2c3154575650cf9482f698106f8f9e
 
 interface FileUploadProps {
   account: string | null;
-  provider: BrowserProvider | null;
   contract: Contract | null;
 }
 
-const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) => {
+const FileUpload: React.FC<FileUploadProps> = ({ account, contract }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'users'>('upload');
   const [walletAddress, setWalletAddress] = useState('');
@@ -72,7 +71,6 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
       setFile(data);
     };
     setFileName(data.name);
-    e.preventDefault();
   };
 
   // Fetch allowed users from contract
@@ -82,10 +80,10 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
       const accessList = await contract.shareAccess();
       // Filter only users with access === true
       const users = accessList
-        .filter((item: any) => item.access)
-        .map((item: any) => item.user);
+        .filter((item: { access: boolean }) => item.access)
+        .map((item: { user: string }) => item.user);
       setAllowedUsers(users);
-    } catch (err) {
+    } catch {
       setAllowedUsers([]);
     }
   };
@@ -104,7 +102,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
       setWalletAddress('');
       fetchAllowedUsers(); // Refresh the allowed users list
       alert("User added successfully!");
-    } catch (err) {
+    } catch {
       alert("Failed to add user.");
     }
   };
