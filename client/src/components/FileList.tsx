@@ -45,18 +45,6 @@ export default function FileList({ account, contract }: { account: string | null
     fetchFiles();
   }, [fetchFiles]);
 
-  const handleDelete = async (hash: string) => {
-    if (!window.confirm("Are you sure you want to delete this file?")) return;
-    setDeleting(hash);
-    try {
-      await axios.delete("/api/delete", { data: { hash } });
-      setFiles((prev) => prev.filter((file) => file.hash !== hash));
-    } catch {
-      alert("Failed to delete file.");
-    }
-    setDeleting(null);
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -67,7 +55,6 @@ export default function FileList({ account, contract }: { account: string | null
 
   const getFileIcon = (fileName: string) => {
     const extension = fileName.split('.').pop()?.toLowerCase();
-    
     switch (extension) {
       case 'pdf':
         return (
@@ -144,10 +131,9 @@ export default function FileList({ account, contract }: { account: string | null
   return (
     <div className="w-full flex justify-center">
       <div className="bg-white/25 dark:bg-blue-900/20 backdrop-blur-xs rounded-3xl shadow-2xl border border-blue-200/20 dark:border-blue-700/20 w-full max-w-4xl overflow-hidden transition-colors duration-300">
-        
         {/* Header */}
-        <div className="bg-white/20 dark:bg-blue-900/30 backdrop-blur-xs px-8 py-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white/20 dark:bg-blue-900/30 backdrop-blur-xs px-4 py-4 sm:px-8 sm:py-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="bg-white/20 p-2 rounded-lg">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -159,13 +145,12 @@ export default function FileList({ account, contract }: { account: string | null
                 <p className="text-slate-200 text-sm">{files.length} {files.length === 1 ? 'file' : 'files'} stored</p>
               </div>
             </div>
-            
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 w-full sm:w-auto">
               {/* Refresh Button */}
               <button
                 onClick={fetchFiles}
                 disabled={loading}
-                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2"
+                className="bg-white/10 hover:bg-white/20 text-white px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 w-full sm:w-auto"
                 title="Refresh"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -173,7 +158,6 @@ export default function FileList({ account, contract }: { account: string | null
                 </svg>
                 {loading ? "Refreshing..." : "Refresh"}
               </button>
-
               {/* View Mode Toggle */}
               <div className="bg-white/10 rounded-lg p-1 flex">
                 <button
@@ -209,12 +193,11 @@ export default function FileList({ account, contract }: { account: string | null
                   </svg>
                 </button>
               </div>
-
               {/* Sort Dropdown */}
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as 'name' | 'size' | 'date')}
-                className="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20"
+                className="bg-white/10 text-white border border-white/20 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-white/20 w-full sm:w-auto"
               >
                 <option value="name" className="text-zinc-900">Sort by Name</option>
                 <option value="size" className="text-zinc-900">Sort by Size</option>
@@ -230,53 +213,50 @@ export default function FileList({ account, contract }: { account: string | null
               onChange={e => setOwnerAddress(e.target.value)}
               className="mb-2 px-3 py-2 rounded border w-full max-w-md"
             />
-            {/* <p className="text-xs text-slate-400">
-              Leave blank to view your own files.
-            </p> */}
           </div>
         </div>
-
         {/* Content */}
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {files.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-6 w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+            <div className="text-center py-10 sm:py-16">
+              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-full p-6 w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 flex items-center justify-center">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
                   <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </div>
-              <h3 className="text-xl font-semibold text-zinc-700 dark:text-zinc-300 mb-2">No files yet</h3>
-              <p className="text-zinc-500 dark:text-zinc-400">Upload your first file to get started with your decentralized storage.</p>
+              <h3 className="text-lg sm:text-xl font-semibold text-zinc-700 dark:text-zinc-300 mb-2">No files yet</h3>
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm sm:text-base">Upload your first file to get started with your decentralized storage.</p>
             </div>
           ) : (
-            <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-3'}>
+            <div className={viewMode === 'grid'
+              ? 'grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4'
+              : 'space-y-3'}>
               {sortedFiles.map((file, idx) => (
                 <div
                   key={idx}
                   className={`bg-white/30 dark:bg-zinc-800/30 rounded-xl border border-zinc-200/20 dark:border-zinc-700/20 hover:shadow-lg transition-all duration-200 hover:border-blue-300 dark:hover:border-blue-600 group ${
-                    viewMode === 'grid' ? 'p-6' : 'p-4'
+                    viewMode === 'grid' ? 'p-4 sm:p-6' : 'p-3 sm:p-4'
                   }`}
                 >
                   <div className={`flex ${viewMode === 'grid' ? 'flex-col items-center text-center' : 'items-center justify-between'}`}>
                     <div className={`flex ${viewMode === 'grid' ? 'flex-col items-center' : 'items-center gap-4'}`}>
                       {getFileIcon(file.name)}
                       <div className={viewMode === 'grid' ? 'mt-4' : ''}>
-                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                        <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 text-base sm:text-lg">
                           {file.name}
                         </h3>
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-1">
+                        <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 mt-1">
                           {formatFileSize(file.size)}
                         </p>
                       </div>
                     </div>
-                    
                     <div className={`flex items-center gap-2 ${viewMode === 'grid' ? 'mt-4 w-full' : ''}`}>
                       {file.url && (
                         <a
                           href={file.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
+                          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all duration-200 flex items-center gap-2 ${
                             viewMode === 'grid' ? 'w-full justify-center' : ''
                           }`}
                         >
@@ -287,7 +267,8 @@ export default function FileList({ account, contract }: { account: string | null
                           View
                         </a>
                       )}
-                      {file.hash && (
+                      {/* Hide Delete Button for now */}
+                      {/* {file.hash && (
                         <button
                           onClick={() => handleDelete(file.hash!)}
                           disabled={deleting === file.hash}
@@ -304,7 +285,7 @@ export default function FileList({ account, contract }: { account: string | null
                           </svg>
                           {deleting === file.hash ? "Deleting..." : "Delete"}
                         </button>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 </div>
