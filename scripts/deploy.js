@@ -6,7 +6,8 @@ async function main() {
 
   await drive.waitForDeployment();
 
-  console.log("Contract deployed to:", drive.getAddress());
+  const address = await drive.getAddress();
+  console.log("Contract deployed to:", address);
 }
 
 main().catch((error) => {

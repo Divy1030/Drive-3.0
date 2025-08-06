@@ -228,9 +228,9 @@ export default function FileList({ account, contract }: { account: string | null
               onChange={e => setOwnerAddress(e.target.value)}
               className="mb-2 px-3 py-2 rounded border w-full max-w-md"
             />
-            <p className="text-xs text-slate-400">
+            {/* <p className="text-xs text-slate-400">
               Leave blank to view your own files.
-            </p>
+            </p> */}
           </div>
         </div>
 

@@ -35,7 +35,7 @@ export default function Home() {
       const address = await signer.getAddress();
       setAccount(address);
 
-      const contractAddress = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+      const contractAddress = "0x229e74d416CC64aF12c12451A97C9951386d23A7";
       const contract = new Contract(contractAddress, Drive.abi, signer);
       setContract(contract);
       setProvider(provider);
