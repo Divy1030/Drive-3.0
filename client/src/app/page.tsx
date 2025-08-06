@@ -21,6 +21,7 @@ export default function Home() {
   const [account, setAccount] = useState<string | null>(null);
   const [contract, setContract] = useState<Contract | null>(null);
   const [provider, setProvider] = useState<BrowserProvider | null>(null);
+  const [ownerAddress, setOwnerAddress] = useState<string>("");
 
   // Only connect when button is clicked
   const handleConnect = async () => {
@@ -88,7 +89,15 @@ export default function Home() {
         <FileUpload account={account} provider={provider} contract={contract}/>
       </div>
       <div className="w-full max-w-4xl flex flex-col gap-8 items-center mb-4">
-        <FileList account={account} />
+        {/* Uploader address input for allowed users */}
+        {/* <input
+          type="text"
+          placeholder="Enter uploader address to view shared files"
+          value={ownerAddress}
+          onChange={e => setOwnerAddress(e.target.value)}
+          className="mb-2 px-3 py-2 rounded border w-full max-w-md"
+        /> */}
+        <FileList account={account} contract={contract} />
       </div>
     </div>
   );

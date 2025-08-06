@@ -2,36 +2,42 @@
 import React, { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 
-export default function FileList({ account }: { account: string | null }) {
+export default function FileList({ account, contract }: { account: string | null, contract: any }) {
+  const [ownerAddress, setOwnerAddress] = useState<string>("");
   const [files, setFiles] = useState<{ name: string; size: number; url?: string; date?: string; hash?: string }[]>([]);
   const [sortBy, setSortBy] = useState<'name' | 'size' | 'date'>('name');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [deleting, setDeleting] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // Fetch files from contract (on-chain access control)
   const fetchFiles = useCallback(async () => {
-    if (!account) {
+    if (!account || !contract) {
       setFiles([]);
       return;
     }
     setLoading(true);
     try {
-      const res = await axios.get(`/api/files?account=${account}`);
-      const pinItems = res.data?.rows || [];
-      setFiles(
-        pinItems.map((item: any) => ({
-          name: item.metadata?.name || item.ipfs_pin_hash || "Unknown",
-          size: item.size || 0,
-          url: `https://gateway.pinata.cloud/ipfs/${item.ipfs_pin_hash}`,
-          date: item.date_pinned,
-          hash: item.ipfs_pin_hash,
-        }))
-      );
+      // If ownerAddress is empty, show own files
+      const addressToFetch = ownerAddress.trim() === "" ? account : ownerAddress.trim();
+      const dataArray = await contract.display(addressToFetch);
+      const filesList = (dataArray || [])
+        .filter((item: string) => !!item)
+        .map((item: string) => {
+          let hash = item.startsWith("https://") ? item.split("/").pop() : item;
+          if (item.startsWith("ipfs://")) hash = item.substring(7);
+          return {
+            name: hash,
+            url: `https://gateway.pinata.cloud/ipfs/${hash}`,
+            hash,
+          };
+        });
+      setFiles(filesList);
     } catch (err) {
       setFiles([]);
     }
     setLoading(false);
-  }, [account]);
+  }, [account, contract, ownerAddress]);
 
   useEffect(() => {
     fetchFiles();
@@ -212,6 +218,19 @@ export default function FileList({ account }: { account: string | null }) {
                 <option value="size" className="text-zinc-900">Sort by Size</option>
               </select>
             </div>
+          </div>
+          {/* Uploader address input for allowed users */}
+          <div className="mt-4">
+            <input
+              type="text"
+              placeholder="Enter uploader address to view shared files"
+              value={ownerAddress}
+              onChange={e => setOwnerAddress(e.target.value)}
+              className="mb-2 px-3 py-2 rounded border w-full max-w-md"
+            />
+            <p className="text-xs text-slate-400">
+              Leave blank to view your own files.
+            </p>
           </div>
         </div>
 
