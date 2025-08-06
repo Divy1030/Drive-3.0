@@ -14,12 +14,6 @@ interface FileUploadProps {
   contract: Contract | null;
 }
 
-// Placeholder for allowed users
-const allowedUsers = [
-  "0x1234...abcd",
-  "0x5678...efgh",
-];
-
 const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'upload' | 'users'>('upload');
@@ -27,6 +21,7 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
   const [file, setFile] = useState<File | null>(null);
   const [fileName, setFileName] = useState("No image selected");
   const [uploading, setUploading] = useState(false);
+  const [allowedUsers, setAllowedUsers] = useState<string[]>([]);
 
   // Pinata upload handler
   const handleSubmit = async (e: React.FormEvent) => {
@@ -80,9 +75,37 @@ const FileUpload: React.FC<FileUploadProps> = ({ account, provider, contract }) 
     e.preventDefault();
   };
 
-  const handleAddUser = () => {
-    if (walletAddress.trim()) {
+  // Fetch allowed users from contract
+  const fetchAllowedUsers = async () => {
+    if (!contract || !account) return;
+    try {
+      const accessList = await contract.shareAccess();
+      // Filter only users with access === true
+      const users = accessList
+        .filter((item: any) => item.access)
+        .map((item: any) => item.user);
+      setAllowedUsers(users);
+    } catch (err) {
+      setAllowedUsers([]);
+    }
+  };
+
+  // Call fetchAllowedUsers when component mounts or account/contract changes
+  React.useEffect(() => {
+    fetchAllowedUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [contract, account]);
+
+  const handleAddUser = async () => {
+    if (!walletAddress.trim() || !contract || !account) return;
+    try {
+      const tx = await contract.allow(walletAddress);
+      await tx.wait();
       setWalletAddress('');
+      fetchAllowedUsers(); // Refresh the allowed users list
+      alert("User added successfully!");
+    } catch (err) {
+      alert("Failed to add user.");
     }
   };
 
